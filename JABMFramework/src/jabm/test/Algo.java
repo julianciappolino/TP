@@ -8,7 +8,7 @@ public class Algo
 {   
 	@Field(label="id",type="id")
 	public int id;
-	@Field(label="nombre",type="text")
+	@Field(label="nombre",type="text",filter=true)
 	public String nombre;
 	@Field(label="dni",type="text")
 	public String dni;

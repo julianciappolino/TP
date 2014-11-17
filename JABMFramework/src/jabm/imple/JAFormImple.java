@@ -4,6 +4,7 @@ import jabm.def.JAForm;
 import jabm.def.JARepository;
 import jabm.def.annotations.Form;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -56,6 +57,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		jFrame.setLayout(new FlowLayout());
 		//tamaño de la ventana default
 		jFrame.setSize(500,600);
+		jFrame.setLocationRelativeTo(null);
 		jFrame.setResizable(false);
 		//para que termine el programa
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -73,10 +75,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		}
         
         
-        //creamos un nuevo jframe para que se puedan editar los campos
-        formulario = new JFrame(recClazz.getAnnotation(Form.class).title());
-        formulario.setLayout(null);
-		formulario.setSize(400,campos.size()*50+100);
+       
 		//nos dibuja los campos en "formulario"
 		createForm();
 		
@@ -101,10 +100,19 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 			case "borrar":
 				break;
 			case "guardar":
+			case "cancelar":
+				formulario.setVisible(false);
+				cleanFormulario();
 				break;
 			default:
 				break;
 		}
+	}
+
+	private void cleanFormulario()
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
@@ -151,7 +159,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 	private Vector<String> getNombreColumnas()
 	{
 		Vector<String> columnas = new Vector<>();
-		for(JAField c:campos)
+ 		for(JAField c:campos)
 		{
 			columnas.add(c.label.getText());
 		}
@@ -163,7 +171,13 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 	{
 		JLabel l = new JLabel("Filtrar por:");
 		//buscar los campos que estan habilitados para filtrar la lista.
-		JComboBox<JAField> c = new JComboBox<>();
+  		JComboBox<String> c = new JComboBox<>();
+ 		for(JAField campo:campos)
+		{
+			if (campo.filter)
+				c.addItem(campo.getLabel().getText() );
+		}
+ 		c.setSelectedIndex(-1);
 		JTextField t = new JTextField(20);
 		
 		JPanel p = new JPanel();
@@ -174,7 +188,15 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 	}
 	
 	private void createForm(){
-		int x=0,y=0;
+		 //creamos un nuevo jframe para que se puedan editar los campos
+        formulario = new JFrame("Completar");//recClazz.getAnnotation(Form.class).title());
+        formulario.setUndecorated(false);
+        formulario.setBackground(Color.black);
+        formulario.setLocationRelativeTo(null);
+        formulario.setLayout(null);
+		formulario.setSize(400,campos.size()*50+100);
+		
+ 		int x=10,y=10;
 		for(JAField c:campos)
 		{
 			c.label.setBounds(x,y,150,25);
@@ -187,8 +209,19 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		//agregamos boton para guardar el formulario
 		JButton guardar = new JButton("Guardar");
 		guardar.setName("guadar");
+		guardar.setBounds(x,y+10,145,25); 
 		guardar.addActionListener(this);
+		//agregamos un boton para cancelar
+		JButton cancelar = new JButton("Cancelar");
+		cancelar.setName("cancelar");
+		cancelar.setBounds(x+160,y+10,145,25); 
+		cancelar.addActionListener(this);
+		
+		formulario.add(guardar); 
+		formulario.add(cancelar); 
+		
 		botones.add(guardar);
+		botones.add(cancelar);
 		
 	}
 

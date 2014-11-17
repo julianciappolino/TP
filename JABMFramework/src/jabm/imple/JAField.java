@@ -9,17 +9,22 @@ public class JAField
 {
 
 	public JLabel label;
-	public Object field;
+	public Object field;		
+	public boolean readOnly; 
+	public boolean required;
+	public String 	validation;
+	public boolean filter;
 	
 	public JAField(Field a){
 		this.label = new JLabel(a.label());
 		this.field = createField(a);
+		this.filter = a.filter();
 	}
 
 	public JLabel getLabel()
 	{
 		// TODO Auto-generated method stub
-		return null;
+		return label;
 	}
 
 	public String getValue()
@@ -33,7 +38,12 @@ public class JAField
 			return new JTextField(a.visualSize());
 		}
 		if (a.type().equals("combo")){
-			return new JComboBox<String>();
+			JComboBox<String> cb= new JComboBox<String>();
+			for(String item:a.values())
+			{
+				cb.addItem(item);
+			}
+			return cb;
 		} 
 		return null;
 	}
