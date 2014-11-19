@@ -22,6 +22,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 
 public class JAFormImple<T> implements ActionListener,JAForm<T>
 {
@@ -31,13 +33,14 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 	List<JAField> campos  ;
 	List<JButton> botones;
 	JARepository<T> repositorio;
-	
+	Class clase;//clase q vamos a manejar
 
 	public JAFormImple(Class<T> recClazz)
 	{
 		
 		campos = new ArrayList<>();
 		botones = new ArrayList<>();
+		clase = recClazz;
 		//asignamos el repositorio
 		if (recClazz.getAnnotation(Form.class).persist().equals("default")){
 			repositorio = new JARepositoryImple<>(recClazz);
@@ -67,52 +70,138 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		for(Field f:fields)
 		{
 			jabm.def.annotations.Field a = f.getAnnotation(jabm.def.annotations.Field.class);
-			if (!a.label().equals("id")){
 				JAField campo = new JAField(a );
 				campos.add(campo);
-			}
-			
-		}
-        
-        
-       
+		}  
 		//nos dibuja los campos en "formulario"
 		createForm();
-		
-        
-        
-        
-
-		
+	
 	}
 
 	@Override //capturamos el evento
 	public void actionPerformed(ActionEvent e)
 	{
 		JButton b = botones.get(botones.indexOf(e.getSource()));
+
 		switch(b.getName())
 		{
 			case "nuevo":
-				formulario.setVisible(true);
+				formulario.setVisible(true);           
 				break;
 			case "editar":
+				cargarDatosSeleccionados();
+				actualizarLista();
 				break;
 			case "borrar":
+				 eliminarSeleccionado();
+				 actualizarLista();
 				break;
 			case "guardar":
+				persistirNuevo();
+				actualizarLista();	
+				cleanFormulario();
+				formulario.setVisible(false);
+				break;
 			case "cancelar":
 				formulario.setVisible(false);
 				cleanFormulario();
+				
 				break;
 			default:
 				break;
 		}
 	}
 
+	private void eliminarSeleccionado()
+	{
+		int id = Integer.parseInt(lista.getValueAt(lista.getSelectedRow(),0).toString());
+		repositorio.delete(id);
+	}
+
+	private void cargarDatosSeleccionados()
+	{
+		
+		
+	}
+
+	private void persistirNuevo()
+	{			
+		try{
+			Object obj;
+ 			obj = clase.newInstance();
+ 			armarModelo((T)obj);
+			repositorio.insert((T)obj);
+			//actualizando la lista.
+				
+		}
+		catch(InstantiationException | IllegalAccessException ex){
+			// TODO Auto-generated catch block
+			ex.printStackTrace();
+		}
+		
+	}
+
+	private void actualizarLista()
+	{
+		JATableModel m = new JATableModel();
+		Vector<T> v = repositorio.getAll();
+		m.setDataVector(convertirDatosParaLista(v),getNombreColumnas());
+		lista.setModel(m);
+		
+	}
+
+	private Vector<Vector<String>> convertirDatosParaLista(Vector<T> v)
+	{
+		Vector<Vector<String>> ret = new Vector<>();
+		Vector<String> aux = null;
+		for(T t:v)
+		{
+			aux = new Vector<>();
+			for(JAField c:campos)
+			{ 
+				
+				try
+				{
+					Field f =t.getClass().getDeclaredField(c.getLabel().getText());
+					aux.add(aux.size(),f.get(t).toString()) ;
+				}
+				catch(IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException ex)
+				{
+					// TODO Auto-generated catch block
+					ex.printStackTrace();
+				}
+
+			}
+			ret.add(aux);
+		}
+		return ret;
+	}
+
+	private void armarModelo(T obj)
+	{
+		try
+		{
+			for(JAField c:campos)
+			{ 
+				if (!c.getLabel().getText().equals("id")){
+          			Field f =obj.getClass().getDeclaredField(c.getLabel().getText());
+					f.set(obj,c.getValue());
+				}
+			}
+		}
+		catch(NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex)
+		{
+			// TODO Auto-generated catch block
+ 			ex.printStackTrace();
+		}
+	}
+
 	private void cleanFormulario()
 	{
-		// TODO Auto-generated method stub
-		
+		for(JAField c:campos)
+		{
+			c.cleanField();
+		}
 	}
 
 	@Override
@@ -174,7 +263,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
   		JComboBox<String> c = new JComboBox<>();
  		for(JAField campo:campos)
 		{
-			if (campo.filter)
+			if (campo.isFilter)
 				c.addItem(campo.getLabel().getText() );
 		}
  		c.setSelectedIndex(-1);
@@ -208,7 +297,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		}
 		//agregamos boton para guardar el formulario
 		JButton guardar = new JButton("Guardar");
-		guardar.setName("guadar");
+		guardar.setName("guardar");
 		guardar.setBounds(x,y+10,145,25); 
 		guardar.addActionListener(this);
 		//agregamos un boton para cancelar
