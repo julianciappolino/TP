@@ -12,6 +12,6 @@ public class Algo
 	public String nombre;
 	@Field(label="dni",type="text")
 	public String dni;
-	@Field(label="fn",type="date")
+	@Field(label="fecha de nacimiento",type="date")
 	public String fn;
 }

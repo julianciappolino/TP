@@ -1,6 +1,7 @@
 package jabm.imple;
 import jabm.def.annotations.Field;
 
+import java.awt.Color;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -18,23 +19,30 @@ import org.jdatepicker.impl.UtilDateModel;
 public class JAField 
 {
 
+	public String name;
 	public JLabel label;
-	public JLabel readOnlyField = null;
+	public JLabel readOnlyField;
+	public JLabel errorMsj;
 	public Object field;		
 	public boolean isReadOnly; 
 	public boolean isRequired;
 	public String 	validation;
 	public boolean isFilter;
 	
-	public JAField(Field a){
-		this.label = new JLabel(a.label());
+	public JAField(java.lang.reflect.Field f){
+		Field a = f.getAnnotation(Field.class);
+		this.name = f.getName();
+		//si no se definio label se pone el nombre de campo
+		this.label = a.label().equals("")?new JLabel(f.getName()):new JLabel(a.label());
 		this.field = createField(a);
 		this.isFilter = a.isFilter();
 		this.isRequired = a.isRequired();
 		this.isReadOnly = a.isReadOnly();
-		if(a.isReadOnly()){
-			this.readOnlyField = new JLabel();
-		}
+		//if(a.isReadOnly()){
+		this.readOnlyField = new JLabel();
+		this.errorMsj = new JLabel();
+		this.errorMsj.setForeground(Color.red);
+	//	}
 	}
  
 	public JLabel getLabel()
@@ -105,6 +113,10 @@ public class JAField
 			if(clazz.equals(JComboBox.class))
 			{
 				((JComboBox<String>)this.field).setSelectedIndex(-1);	
+			}
+			if(clazz.equals(JDatePickerImpl.class))
+			{
+				((JDatePickerImpl)this.field).getJFormattedTextField().setText("");	
 			}
 		
 	}

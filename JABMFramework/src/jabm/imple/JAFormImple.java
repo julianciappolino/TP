@@ -69,8 +69,8 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		Field[] fields = recClazz.getDeclaredFields();
 		for(Field f:fields)
 		{
-			jabm.def.annotations.Field a = f.getAnnotation(jabm.def.annotations.Field.class);
-				JAField campo = new JAField(a );
+			//jabm.def.annotations.Field a = f.getAnnotation(jabm.def.annotations.Field.class);
+				JAField campo = new JAField(f );
 				campos.add(campo);
 		}  
 		//nos dibuja los campos en "formulario"
@@ -162,7 +162,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 				
 				try
 				{
-					Field f =t.getClass().getDeclaredField(c.getLabel().getText());
+					Field f =t.getClass().getDeclaredField(c.name);
 					aux.add(aux.size(),f.get(t).toString()) ;
 				}
 				catch(IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException ex)
@@ -183,8 +183,8 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		{
 			for(JAField c:campos)
 			{ 
-				if (!c.getLabel().getText().equals("id")){
-          			Field f =obj.getClass().getDeclaredField(c.getLabel().getText());
+				if (!c.name.equals("id")){
+          			Field f =obj.getClass().getDeclaredField(c.name);
 					f.set(obj,c.getValue());
 				}
 			}
@@ -288,11 +288,17 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
  		int x=10,y=10;
 		for(JAField c:campos)
 		{
+			//la etiqueta
 			c.label.setBounds(x,y,150,25);
+			//el campo definido.
 			((Component)c.field).setBounds(x+150,y,150,25);
+			//cuando sea readonly vamos a mostrar esta etiqueta.
+			c.readOnlyField.setBounds(x+150,y,150,25);
+			c.readOnlyField.setVisible(false);
 			//agregamos al frame
 			formulario.add(c.label);
 			formulario.add((Component)c.field);
+			formulario.add(c.readOnlyField);
 			y+=40;
 		}
 		//agregamos boton para guardar el formulario
