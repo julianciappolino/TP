@@ -8,4 +8,5 @@ public interface JARepository<T>
 	public void delete(int id);
 	public void update(int id, T v);
 	public Vector<T> getAll();
+	public Vector<T> getWithFilter(String fieldName, String fieldValue);
 }

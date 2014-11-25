@@ -2,20 +2,20 @@ package jabm.imple;
 
 import jabm.def.JARepository;
 
+import java.awt.List;
 import java.lang.reflect.Field;
 import java.util.Vector;
 
 public class JARepositoryImple<T> implements JARepository<T>
 {
 
-	private Vector<T> data;
-	private int id;
+	private Vector<T> data= new Vector<T>();;
+	private int id = 1;
 	
-	public JARepositoryImple(Class<T> recClazz){
-		
-		data = new Vector<T>();
-		id = 1;
+	public JARepositoryImple(){
+		; 
 	}
+	
 	public JARepositoryImple(Vector<T> data)
 	{
 		this.data=data;
@@ -46,6 +46,22 @@ public class JARepositoryImple<T> implements JARepository<T>
 	}
 	public Vector<T> getAll(){
 		return data;
+	}
+	public Vector<T> getWithFilter(String fieldName, String fieldValue){
+		Vector<T> v = new Vector<>();
+		for(T x:data)
+		{
+			try
+			{
+				x.getClass().getDeclaredField(fieldName).get(x).toString().equals(fieldValue);
+			}
+			catch(IllegalArgumentException|IllegalAccessException|NoSuchFieldException|SecurityException ex)
+			{
+				// TODO Auto-generated catch block
+				ex.printStackTrace();
+			}
+		}
+		return v;
 	}
 	private int find(int id){
 		int index = 0;

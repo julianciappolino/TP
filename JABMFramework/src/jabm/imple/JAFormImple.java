@@ -22,6 +22,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
@@ -30,6 +32,10 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 	JFrame jFrame;//contenedor de todo
 	JFrame formulario;
 	JTable lista;
+	//para el filtro
+	JComboBox<String> comboFiltros;
+	JTextField filtroText;
+	//para manejar los campos del modelo.
 	List<JAField> campos  ;
 	List<JButton> botones;
 	JARepository<T> repositorio;
@@ -43,7 +49,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		clase = recClazz;
 		//asignamos el repositorio
 		if (recClazz.getAnnotation(Form.class).persist().equals("default")){
-			repositorio = new JARepositoryImple<>(recClazz);
+			repositorio = new JARepositoryImple<T>();
 		} else {
 			try{
 				Class<?> r =Class.forName(recClazz.getAnnotation(Form.class).persist());
@@ -97,10 +103,12 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 				 actualizarLista();
 				break;
 			case "guardar":
-				persistirNuevo();
-				actualizarLista();	
-				cleanFormulario();
-				formulario.setVisible(false);
+				if(!hayErrores()){
+					persistirNuevo();
+					actualizarLista();	
+					cleanFormulario();
+					formulario.setVisible(false);
+				}
 				break;
 			case "cancelar":
 				formulario.setVisible(false);
@@ -110,6 +118,16 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 			default:
 				break;
 		}
+	}
+
+	private boolean hayErrores()
+	{
+		for(JAField f:campos)
+		{
+			if (f.onError)
+				return true;
+		}
+		return false;
 	}
 
 	private void eliminarSeleccionado()
@@ -264,18 +282,35 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
  		for(JAField campo:campos)
 		{
 			if (campo.isFilter)
-				c.addItem(campo.getLabel().getText() );
+				c.addItem(campo.name);
 		}
  		c.setSelectedIndex(-1);
 		JTextField t = new JTextField(20);
 		
+		t.getDocument().addDocumentListener(new DocumentListener()
+		{
+			@Override
+			public void removeUpdate(DocumentEvent e){
+				 obtenerListaFiltrada();	
+			}
+			@Override
+			public void insertUpdate(DocumentEvent e){
+				obtenerListaFiltrada();	
+			}
+			@Override
+			public void changedUpdate(DocumentEvent e){
+				obtenerListaFiltrada();	
+			}
+		});
 		JPanel p = new JPanel();
 		p.add(l);
 		p.add(c);
 		p.add(t);
 		jFrame.add(p);
 	}
-	
+	private void obtenerListaFiltrada(){
+		repositorio.getWithFilter(comboFiltros.getSelectedItem().toString(),filtroText.getText());
+	}
 	private void createForm(){
 		 //creamos un nuevo jframe para que se puedan editar los campos
         formulario = new JFrame("Completar");//recClazz.getAnnotation(Form.class).title());
@@ -283,7 +318,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
         formulario.setBackground(Color.black);
         formulario.setLocationRelativeTo(null);
         formulario.setLayout(null);
-		formulario.setSize(400,campos.size()*50+100);
+		formulario.setSize(500,campos.size()*50+100);
 		
  		int x=10,y=10;
 		for(JAField c:campos)
@@ -295,10 +330,12 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 			//cuando sea readonly vamos a mostrar esta etiqueta.
 			c.readOnlyField.setBounds(x+150,y,150,25);
 			c.readOnlyField.setVisible(false);
+			c.errorMsj.setBounds(x+300,y,150,25);
 			//agregamos al frame
 			formulario.add(c.label);
 			formulario.add((Component)c.field);
 			formulario.add(c.readOnlyField);
+			formulario.add(c.errorMsj);
 			y+=40;
 		}
 		//agregamos boton para guardar el formulario
