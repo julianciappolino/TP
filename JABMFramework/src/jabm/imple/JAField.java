@@ -31,6 +31,7 @@ public class JAField
 	public JLabel label;
 	public JLabel readOnlyField;
 	public JLabel errorMsj;
+	Class type;
 	public Object field;		
 	public boolean isReadOnly; 
 	public boolean isRequired;
@@ -43,6 +44,7 @@ public class JAField
 	public JAField(java.lang.reflect.Field f){
 		Field a = f.getAnnotation(Field.class);
 		this.name = f.getName();
+		this.type = f.getType();
 		//si no se definio label se pone el nombre de campo
 		this.label = a.label().equals("")?new JLabel(f.getName()):new JLabel(a.label());
 		this.field = createField(a);
@@ -72,6 +74,10 @@ public class JAField
 
 	public String getValue()
 	{
+		if(field.getClass().equals(JLabel.class))
+		{
+			return ((JLabel)this.field).getText();
+		}
 		if(field.getClass().equals(JComboBox.class)){
 			JComboBox<String> a =(JComboBox<String>)field;
 			return a.getSelectedItem().toString(); 
@@ -85,6 +91,26 @@ public class JAField
 			return a.getJFormattedTextField().getText();
 		}
 		return null;
+	}
+	public void setValue(String v)
+	{
+		if(field.getClass().equals(JLabel.class))
+		{
+			((JLabel)this.field).setText(v);
+		}
+		if(field.getClass().equals(JComboBox.class)){
+			JComboBox<String> a =(JComboBox<String>)field;
+			a.setSelectedItem(v); 
+		}
+		if(field.getClass().equals(JTextField.class)){
+			JTextField a =(JTextField)field;
+			a.setText(v);
+		}
+		if(field.getClass().equals(JDatePickerImpl.class)){
+			JDatePickerImpl a =(JDatePickerImpl)field;
+			a.getJFormattedTextField().setText(v);
+		}
+		
 	}
 	
 	Object createField(Field a){

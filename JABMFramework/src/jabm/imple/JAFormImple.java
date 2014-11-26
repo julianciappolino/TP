@@ -24,8 +24,6 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 
 public class JAFormImple<T> implements ActionListener,JAForm<T>
 {
@@ -96,7 +94,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 				break;
 			case "editar":
 				cargarDatosSeleccionados();
-				actualizarLista();
+				formulario.setVisible(true);
 				break;
 			case "borrar":
 				 eliminarSeleccionado();
@@ -137,8 +135,11 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 	}
 
 	private void cargarDatosSeleccionados()
-	{
-		
+	{ 
+		int i =lista.getSelectedRow();
+		for(int j=0; j<lista.getColumnCount(); j++){
+			campos.get(j).setValue(lista.getValueAt(i,j).toString());
+		}
 		
 	}
 
@@ -147,8 +148,15 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		try{
 			Object obj;
  			obj = clase.newInstance();
+ 			String id= campos.get(0).getValue();
  			armarModelo((T)obj);
-			repositorio.insert((T)obj);
+ 			//si el id es "" entonces es uno nuevo.
+ 			if(id.equals(""))
+ 				repositorio.insert((T)obj);
+ 			else{
+ 				agregarIdAlModelo((T)obj, Integer.parseInt(id));
+ 				repositorio.update(Integer.parseInt(id),(T)obj) ;
+ 			}
 			//actualizando la lista.
 				
 		}
@@ -194,6 +202,18 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		}
 		return ret;
 	}
+	private void agregarIdAlModelo(T obj, int i){
+		try
+		{
+			Field f =obj.getClass().getDeclaredField("id");
+			f.set(obj,i);
+		}
+		catch(NoSuchFieldException|SecurityException | IllegalArgumentException | IllegalAccessException ex)
+		{
+			// TODO Auto-generated catch block
+			ex.printStackTrace();
+		}
+	}
 
 	private void armarModelo(T obj)
 	{
@@ -203,7 +223,12 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 			{ 
 				if (!c.name.equals("id")){
           			Field f =obj.getClass().getDeclaredField(c.name);
-					f.set(obj,c.getValue());
+          			if (c.type.equals(int.class)){
+          				f.set(obj,Integer.parseInt(c.getValue()));
+          			} else {
+          				f.set(obj,c.getValue());
+          			}
+					
 				}
 			}
 		}

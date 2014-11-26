@@ -42,7 +42,9 @@ public class JARepositoryImple<T> implements JARepository<T>
 		data.remove(find(id));
 	}
 	public void update(int id,T r){
-	
+		int i = find(id);
+		data.remove(i);
+		data.add(r);
 	}
 	public Vector<T> getAll(){
 		return data;
@@ -82,4 +84,6 @@ public class JARepositoryImple<T> implements JARepository<T>
 		}
 		return -1;
 	}
+
+
 }
