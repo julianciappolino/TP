@@ -5,6 +5,8 @@ import jabm.def.JARepository;
 import java.awt.List;
 import java.lang.reflect.Field;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JARepositoryImple<T> implements JARepository<T>
 {
@@ -51,11 +53,15 @@ public class JARepositoryImple<T> implements JARepository<T>
 	}
 	public Vector<T> getWithFilter(String fieldName, String fieldValue){
 		Vector<T> v = new Vector<>();
+		Pattern p = Pattern.compile("^.*"+fieldValue+".*$");
+     	
 		for(T x:data)
 		{
 			try
 			{
-				x.getClass().getDeclaredField(fieldName).get(x).toString().equals(fieldValue);
+				Matcher matcher = p.matcher(x.getClass().getDeclaredField(fieldName).get(x).toString());
+				if(matcher.matches())
+					v.add(x);
 			}
 			catch(IllegalArgumentException|IllegalAccessException|NoSuchFieldException|SecurityException ex)
 			{

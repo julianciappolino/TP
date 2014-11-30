@@ -6,7 +6,6 @@ import jabm.def.annotations.Form;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Field;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -24,6 +24,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.table.TableColumnModel;
 
 public class JAFormImple<T> implements ActionListener,JAForm<T>
 {
@@ -61,9 +62,9 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		//creamos un frame (ventana) con el titulo
 		jFrame = new JFrame(recClazz.getAnnotation(Form.class).title());
 		//para que ordene los elementos solo.
-		jFrame.setLayout(new FlowLayout());
+		jFrame.setLayout(new BoxLayout(jFrame.getContentPane(),BoxLayout.Y_AXIS));
 		//tamaño de la ventana default
-		jFrame.setSize(500,600);
+		jFrame.setSize(700,600);
 		jFrame.setLocationRelativeTo(null);
 		jFrame.setResizable(false);
 		//para que termine el programa
@@ -90,20 +91,22 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		switch(b.getName())
 		{
 			case "nuevo":
-				formulario.setVisible(true);           
+				formulario.setVisible(true);
+				showFields(true);//para mostrar todo editable
 				break;
 			case "editar":
 				cargarDatosSeleccionados();
+				showFields(false);//para mostrar los q correspondan como readOnly
 				formulario.setVisible(true);
 				break;
 			case "borrar":
 				 eliminarSeleccionado();
-				 actualizarLista();
+				 actualizarLista(repositorio.getAll());
 				break;
 			case "guardar":
 				if(!hayErrores()){
-					persistirNuevo();
-					actualizarLista();	
+					persistir();
+					actualizarLista(repositorio.getAll());	
 					cleanFormulario();
 					formulario.setVisible(false);
 				}
@@ -111,11 +114,26 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 			case "cancelar":
 				formulario.setVisible(false);
 				cleanFormulario();
-				
 				break;
 			default:
 				break;
 		}
+	}
+
+	private void showFields(boolean editables)
+	{
+		for(JAField f:campos)
+		{
+			if (editables)
+				f.showEditable();	
+			else {
+				if (f.isReadOnly)
+					f.showReadOnly();
+				else
+					f.showEditable();
+			}
+		}
+		
 	}
 
 	private boolean hayErrores()
@@ -143,7 +161,7 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		
 	}
 
-	private void persistirNuevo()
+	private void persistir()
 	{			
 		try{
 			Object obj;
@@ -167,10 +185,10 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		
 	}
 
-	private void actualizarLista()
+	private void actualizarLista(Vector<T> v)
 	{
 		JATableModel m = new JATableModel();
-		Vector<T> v = repositorio.getAll();
+	//	Vector<T> v = repositorio.getAll();
 		m.setDataVector(convertirDatosParaLista(v),getNombreColumnas());
 		lista.setModel(m);
 		
@@ -224,8 +242,12 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 				if (!c.name.equals("id")){
           			Field f =obj.getClass().getDeclaredField(c.name);
           			if (c.type.equals(int.class)){
-          				f.set(obj,Integer.parseInt(c.getValue()));
-          			} else {
+          				f.set(obj,Integer.parseInt(c.getValue().equals("")?"0":c.getValue()));
+          			}
+      				if (c.type.equals(double.class)){
+      					f.set(obj,Double.parseDouble(c.getValue().equals("")?"0":c.getValue()));
+      				}
+          			 else {
           				f.set(obj,c.getValue());
           			}
 					
@@ -271,9 +293,12 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		botones.add(editar);
 		botones.add(borrar);
 		//los agregamos al jframe para q los muestre
-		jFrame.add(nuevo);
-		jFrame.add(editar);
-		jFrame.add(borrar);
+		JPanel p = new JPanel();
+		p.add(nuevo);
+		p.add(editar);
+		p.add(borrar);
+		
+		jFrame.add(p);
 	}
 
 	private void createListaDatos()
@@ -281,13 +306,20 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		Vector<String>	columnas = getNombreColumnas();
 		
 		JTable t = new JTable(repositorio.getAll(),columnas);
+		t.getTableHeader().setReorderingAllowed(false);
+		setAnchoColumnas(t);
 		JScrollPane sp = new JScrollPane(t);
+		
 		jFrame.add(sp);
 		//para q sea visible sin mucho quilombo
 		lista = t;
 		
 	}
-
+	private void setAnchoColumnas(JTable t){
+		TableColumnModel tm =  t.getColumnModel();
+		tm.setColumnSelectionAllowed(false);
+		
+	}
 	private Vector<String> getNombreColumnas()
 	{
 		Vector<String> columnas = new Vector<>();
@@ -310,8 +342,9 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 				c.addItem(campo.name);
 		}
  		c.setSelectedIndex(-1);
+ 		comboFiltros = c;
 		JTextField t = new JTextField(20);
-		
+		filtroText = t;
 		t.getDocument().addDocumentListener(new DocumentListener()
 		{
 			@Override
@@ -327,21 +360,39 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 				obtenerListaFiltrada();	
 			}
 		});
+		JButton lf = new JButton("Limpiar");lf.setName("limpiarFiltros");
+		lf.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+					comboFiltros.setSelectedIndex(-1);
+					filtroText.setText("");
+					actualizarLista(repositorio.getAll());
+				
+			}
+		});
+		
 		JPanel p = new JPanel();
 		p.add(l);
 		p.add(c);
 		p.add(t);
+		p.add(lf);
 		jFrame.add(p);
 	}
 	private void obtenerListaFiltrada(){
-		repositorio.getWithFilter(comboFiltros.getSelectedItem().toString(),filtroText.getText());
+		if (!filtroText.getText().equals("")){
+			Vector<T> v =repositorio.getWithFilter(comboFiltros.getSelectedItem().toString(),filtroText.getText());
+			actualizarLista(v);
+		}
 	}
 	private void createForm(){
 		 //creamos un nuevo jframe para que se puedan editar los campos
         formulario = new JFrame("Completar");//recClazz.getAnnotation(Form.class).title());
         formulario.setUndecorated(false);
         formulario.setBackground(Color.black);
-        formulario.setLocationRelativeTo(null);
+        formulario.setLocationRelativeTo(jFrame);
         formulario.setLayout(null);
 		formulario.setSize(500,campos.size()*50+100);
 		
@@ -366,12 +417,12 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		//agregamos boton para guardar el formulario
 		JButton guardar = new JButton("Guardar");
 		guardar.setName("guardar");
-		guardar.setBounds(x,y+10,145,25); 
+		guardar.setBounds(x,y+20,145,25); 
 		guardar.addActionListener(this);
 		//agregamos un boton para cancelar
 		JButton cancelar = new JButton("Cancelar");
 		cancelar.setName("cancelar");
-		cancelar.setBounds(x+160,y+10,145,25); 
+		cancelar.setBounds(x+160,y+20,145,25); 
 		cancelar.addActionListener(this);
 		
 		formulario.add(guardar); 

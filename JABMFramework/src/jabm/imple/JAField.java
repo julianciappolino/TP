@@ -2,6 +2,7 @@ package jabm.imple;
 import jabm.def.annotations.Field;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.text.ParseException;
@@ -94,6 +95,7 @@ public class JAField
 	}
 	public void setValue(String v)
 	{
+		this.readOnlyField.setText(v);
 		if(field.getClass().equals(JLabel.class))
 		{
 			((JLabel)this.field).setText(v);
@@ -153,7 +155,7 @@ public class JAField
 			
 		    return datePicker;
 		}
-		return null;
+		throw new RuntimeException("'" +a.type() +"'" +" Tipo de campo no reconocido.");
 	}
 
 	private void setTextListener(Document txt)
@@ -203,6 +205,10 @@ public class JAField
 	//devuelve true si hay error
 	private boolean expresionValidation(){
 		if(!this.validation.equals("")){
+			if(this.getValue().equals("") && this.isRequired ==false){
+				setOnError(false,0);
+				return false;
+			}
 			Pattern p = Pattern.compile(this.validation);
 	     	Matcher matcher = p.matcher(this.getValue());
 	     	if (!matcher.matches()){
@@ -263,6 +269,7 @@ public class JAField
 
 	public void cleanField(){
 		Class clazz = this.field.getClass();
+		this.readOnlyField.setText("");
 		if(clazz.equals(JLabel.class))
 		{
 			((JLabel)this.field).setText("");
@@ -283,6 +290,17 @@ public class JAField
 			((JDatePickerImpl)this.field).getJFormattedTextField().setText("");	
 		}
 		
+	}
+	
+	public void showReadOnly(){
+
+		((Component)this.field).setVisible(false);
+		this.readOnlyField.setVisible(true);
+
+	}
+	public void showEditable(){
+		((Component)this.field).setVisible(true);
+		this.readOnlyField.setVisible(false);
 	}
 	
 	private AbstractFormatter getFormated(){
