@@ -432,6 +432,11 @@ public class JAFormImple<T> implements ActionListener,JAForm<T>
 		botones.add(cancelar);
 		
 	}
+	
+	public void close(){
+		this.jFrame.setVisible(false);
+		this.formulario.setVisible(false);
+	}
 
 
 

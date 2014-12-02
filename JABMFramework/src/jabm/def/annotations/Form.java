@@ -12,14 +12,11 @@ public @interface Form
 {
 	String title(); //titulo del formulario
 	
-	/*En true, el framework se encarga de la persistencia en false el usuario
-	 * tiene que definir una clase y setear el nombre y debe
-	 * implementar la interfaz JARepository*/
+	/*En default, el framework se encarga de la persistencia. 
+	 * Sino tiene que definir una clase que 
+	 * implemente la interfaz JARepository*/
 	String persist() default "default"; 
-	
-	String buttons() default "default"; //si no es default debe definirse una funcion para cada boton.
-	
-		
+			
 }
 
 

@@ -24,6 +24,6 @@ public class Algo
 	@Field(label="Altura",type="text",validation="\\d+(\\.\\d{1,2})?")
 	public double altura;
 	//campo de prueba date picker, requerido.
-	@Field(label="fecha de nacimiento",type="date",isRequired=true)
+	@Field(label="fecha de nacimiento",type="date",isRequired=true, isReadOnly=true)
 	public String fn;
 }
